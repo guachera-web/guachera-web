@@ -7,6 +7,7 @@ import Tratamientos from './pages/Tratamientos'
 import Recria from './pages/Recria'
 import Balance from './pages/Balance'
 import Reportes from './pages/Reportes'
+import Usuarios from './pages/Usuarios'
 import './App.css'
 
 const nav = [
@@ -18,6 +19,7 @@ const nav = [
   { to: '/recria', label: 'Recría', icon: '🌾' },
   { to: '/balance', label: 'Balance', icon: '⚖️', section: 'Gestión' },
   { to: '/reportes', label: 'Reportes', icon: '📈' },
+  { to: '/usuarios', label: 'Usuarios', icon: '👥', section: 'Administración' },
 ]
 
 export default function App() {
@@ -65,6 +67,7 @@ export default function App() {
             <Route path="/recria" element={<Recria />} />
             <Route path="/balance" element={<Balance />} />
             <Route path="/reportes" element={<Reportes />} />
+            <Route path="/usuarios" element={<Usuarios />} />
           </Routes>
         </main>
       </div>
