@@ -6,15 +6,25 @@ export default function Tratamientos() {
   const [historico, setHistorico] = useState([])
   const [tab, setTab] = useState('activos')
   const [loading, setLoading] = useState(true)
-  const hoy = new Date().toISOString().split('T')[0]
 
   useEffect(() => { cargar() }, [])
+
+  function parseFecha(str) {
+    if (!str) return null
+    const [d, m, y] = str.split('/')
+    if (!d || !m || !y) return null
+    return new Date(`${y}-${m}-${d}`)
+  }
+
+  function fmtFecha(str) {
+    if (!str) return '—'
+    return str
+  }
 
   async function cargar() {
     setLoading(true)
 
-    // Activos
-    const { data: activos } = await supabase
+    const { data } = await supabase
       .from('tratamientos')
       .select(`
         *,
@@ -22,33 +32,38 @@ export default function Tratamientos() {
         tratamiento_detalle(dosis, unidad, medicamento_id, medicamentos(nombre))
       `)
       .eq('establecimiento', 'tambo_1')
-      .gte('fecha_fin', hoy)
       .order('fecha_fin')
 
-    // Histórico (últimos 30 días)
-    const hace30 = new Date()
-    hace30.setDate(hace30.getDate() - 30)
-    const hace30str = hace30.toISOString().split('T')[0]
+    if (data) {
+      const hoy = new Date()
+      hoy.setHours(0, 0, 0, 0)
 
-    const { data: hist } = await supabase
-      .from('tratamientos')
-      .select(`
-        *,
-        terneros(caravana, corral),
-        tratamiento_detalle(dosis, unidad, medicamento_id, medicamentos(nombre))
-      `)
-      .eq('establecimiento', 'tambo_1')
-      .lt('fecha_fin', hoy)
-      .gte('fecha_fin', hace30str)
-      .order('fecha_fin', { ascending: false })
+      const hace30 = new Date()
+      hace30.setDate(hace30.getDate() - 30)
+      hace30.setHours(0, 0, 0, 0)
 
-    if (activos) setTratamientos(activos)
-    if (hist) setHistorico(hist)
+      const activos = data.filter(t => {
+        const fin = parseFecha(t.fecha_fin)
+        return fin && fin >= hoy
+      })
+
+      const hist = data.filter(t => {
+        const fin = parseFecha(t.fecha_fin)
+        return fin && fin < hoy && fin >= hace30
+      }).reverse()
+
+      setTratamientos(activos)
+      setHistorico(hist)
+    }
     setLoading(false)
   }
 
   function diasRestantes(fechaFin) {
-    return Math.ceil((new Date(fechaFin) - new Date()) / 86400000)
+    const fin = parseFecha(fechaFin)
+    if (!fin) return 0
+    const hoy = new Date()
+    hoy.setHours(0, 0, 0, 0)
+    return Math.ceil((fin - hoy) / 86400000)
   }
 
   function medicamentoLabel(t) {
@@ -62,11 +77,12 @@ export default function Tratamientos() {
   }
 
   function progreso(fechaInicio, fechaFin) {
-    const inicio = new Date(fechaInicio)
-    const fin = new Date(fechaFin)
-    const hoyD = new Date()
+    const inicio = parseFecha(fechaInicio)
+    const fin = parseFecha(fechaFin)
+    if (!inicio || !fin) return 0
+    const hoy = new Date()
     const total = (fin - inicio) / 86400000
-    const transcurrido = (hoyD - inicio) / 86400000
+    const transcurrido = (hoy - inicio) / 86400000
     return Math.min(100, Math.max(0, Math.round((transcurrido / total) * 100)))
   }
 
@@ -120,18 +136,12 @@ export default function Tratamientos() {
                   <tr key={t.id}>
                     <td><strong>{t.terneros?.caravana || '—'}</strong></td>
                     <td>Corral {t.terneros?.corral || '—'}</td>
-                    <td>
-                      <span style={{ fontWeight: 600 }}>{med}</span>
-                    </td>
+                    <td><span style={{ fontWeight: 600 }}>{med}</span></td>
                     <td style={{ textAlign: 'center' }}>
                       <span className="chip c">{t.dias || '—'}d</span>
                     </td>
-                    <td style={{ color: 'var(--muted)', fontSize: 13 }}>
-                      {t.fecha_inicio?.substring(0, 10) || '—'}
-                    </td>
-                    <td style={{ color: 'var(--muted)', fontSize: 13 }}>
-                      {t.fecha_fin?.substring(0, 10) || '—'}
-                    </td>
+                    <td style={{ color: 'var(--muted)', fontSize: 13 }}>{fmtFecha(t.fecha_inicio)}</td>
+                    <td style={{ color: 'var(--muted)', fontSize: 13 }}>{fmtFecha(t.fecha_fin)}</td>
                     {tab === 'activos' ? (
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -147,9 +157,7 @@ export default function Tratamientos() {
                         </div>
                       </td>
                     ) : (
-                      <td>
-                        <span className="chip g">Finalizado</span>
-                      </td>
+                      <td><span className="chip g">Finalizado</span></td>
                     )}
                   </tr>
                 )
