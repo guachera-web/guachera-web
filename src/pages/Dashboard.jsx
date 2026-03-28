@@ -8,8 +8,6 @@ export default function Dashboard() {
   const [alertas, setAlertas] = useState([])
   const [tratamientos, setTratamientos] = useState([])
   const [loading, setLoading] = useState(true)
-  const [resumenIA, setResumenIA] = useState('')
-  const [loadingIA, setLoadingIA] = useState(false)
   const hoy = new Date().toISOString().split('T')[0]
 
   useEffect(() => { cargar() }, [])
@@ -62,80 +60,6 @@ export default function Dashboard() {
     setLoading(false)
   }
 
-  async function generarResumenIA() {
-    setLoadingIA(true)
-    setResumenIA('')
-
-    try {
-      const key = import.meta.env.VITE_GEMINI_KEY=AIzaSyBNpWRiEEIh3c6KkKFFdIWeRbfziLZxXWo
-      if (!key) {
-        setResumenIA('API key no configurada.')
-        setLoadingIA(false)
-        return
-      }
-
-      const { data: terneros } = await supabase.from('terneros').select('*').eq('establecimiento', 'tambo_1')
-
-      const activos = terneros?.filter(t => !t.fecha_baja && !t.fecha_recria) || []
-      const mesActual = new Date().toISOString().substring(0, 7)
-      const bajasMes = terneros?.filter(t => t.fecha_baja?.startsWith(mesActual)) || []
-      const ingresosMes = terneros?.filter(t => t.fecha_nacimiento?.startsWith(mesActual)) || []
-
-      const corralesMap = {}
-      activos.forEach(t => {
-        if (!corralesMap[t.corral]) corralesMap[t.corral] = { corral: t.corral, critico: 0, alerta: 0, total: 0 }
-        corralesMap[t.corral].total++
-        if (t.estado === 'CRÍTICO') corralesMap[t.corral].critico++
-        if (t.estado === 'ALERTA') corralesMap[t.corral].alerta++
-      })
-      const corralesProblema = Object.values(corralesMap)
-        .filter(c => c.critico > 0 || c.alerta > 0)
-        .sort((a, b) => (b.critico * 2 + b.alerta) - (a.critico * 2 + a.alerta))
-
-      const criticos = activos.filter(t => t.estado === 'CRÍTICO')
-      const mortalidad = ingresosMes.length > 0
-        ? ((bajasMes.length / ingresosMes.length) * 100).toFixed(1) : 0
-
-      const prompt = `Sos un veterinario especialista en guacheras (cría de terneros). Analizá estos datos del día de hoy del Tambo Saifica y generá un resumen ejecutivo claro y útil en español, con tono profesional pero directo. Usá párrafos cortos. Destacá lo urgente primero.
-
-DATOS DEL DÍA:
-- Total activos en guachera: ${activos.length}
-- Sanos: ${activos.filter(t => t.estado === 'SANO').length}
-- En alerta: ${activos.filter(t => t.estado === 'ALERTA').length}
-- Críticos: ${criticos.length}${criticos.length > 0 ? ` (caravanas: ${criticos.map(t => t.caravana).join(', ')})` : ''}
-- En tratamiento: ${activos.filter(t => t.estado === 'EN TRATAMIENTO').length}
-
-CORRALES CON PROBLEMAS:
-${corralesProblema.length > 0 ? corralesProblema.map(c => `- Corral ${c.corral}: ${c.critico} críticos, ${c.alerta} alertas de ${c.total} animales`).join('\n') : '- Ninguno'}
-
-MOVIMIENTO DEL MES:
-- Ingresos: ${ingresosMes.length} terneros
-- Bajas: ${bajasMes.length}
-- Tasa de mortalidad: ${mortalidad}%
-
-Generá el resumen en 3-5 párrafos cortos. No uses bullets. No inventes datos que no te di.`
-
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: { maxOutputTokens: 1024, temperature: 0.7 },
-          }),
-        }
-      )
-
-      const data = await response.json()
-      const texto = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No se pudo generar el resumen.'
-      setResumenIA(texto)
-    } catch (e) {
-      setResumenIA('Error al generar el resumen. Intentá de nuevo.')
-    }
-    setLoadingIA(false)
-  }
-
   function semaforo(c) {
     if (c.critico > 0) return 'sem-r'
     if (c.alerta > 0 || c.enTrat > 0) return 'sem-n'
@@ -156,37 +80,10 @@ Generá el resumen en 3-5 párrafos cortos. No uses bullets. No inventes datos q
           <h2>Dashboard</h2>
           <p>{new Date().toLocaleDateString('es-AR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
         </div>
-        <div className="topbar-right" style={{ display: 'flex', gap: 8 }}>
-          <button className="btn" onClick={generarResumenIA} disabled={loadingIA}
-            style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#fff', border: 'none' }}>
-            {loadingIA ? '⏳ Analizando...' : '✨ Resumen IA'}
-          </button>
+        <div className="topbar-right">
           <button className="btn btn-primary" onClick={cargar}>↻ Actualizar</button>
         </div>
       </div>
-
-      {(resumenIA || loadingIA) && (
-        <div className="card" style={{ marginBottom: 16, borderLeft: '4px solid #8b5cf6', background: '#faf9ff' }}>
-          <div className="card-header">
-            <span className="card-title" style={{ color: '#6366f1' }}>✨ Análisis del día — IA</span>
-            {resumenIA && (
-              <button onClick={() => setResumenIA('')}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: 18 }}>
-                ×
-              </button>
-            )}
-          </div>
-          <div style={{ padding: '12px 16px 16px' }}>
-            {loadingIA ? (
-              <div style={{ color: 'var(--muted)', fontStyle: 'italic' }}>Analizando datos del tambo...</div>
-            ) : (
-              <div style={{ lineHeight: 1.7, color: 'var(--text)', fontSize: 14, whiteSpace: 'pre-wrap' }}>
-                {resumenIA}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
 
       <div className="stats-grid stats-6">
         <div className="stat-card"><div className="stat-lbl">🐄 Total activos</div><div className="stat-val">{stats.total}</div><div className="stat-sub">en guachera</div></div>
