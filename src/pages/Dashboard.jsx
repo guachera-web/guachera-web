@@ -67,16 +67,13 @@ export default function Dashboard() {
     setResumenIA('')
 
     try {
-      // Traer datos frescos para el resumen
       const { data: terneros } = await supabase.from('terneros').select('*').eq('establecimiento', 'tambo_1')
-      const { data: trats } = await supabase.from('tratamientos').select('*, terneros(caravana)').eq('establecimiento', 'tambo_1')
 
       const activos = terneros?.filter(t => !t.fecha_baja && !t.fecha_recria) || []
       const mesActual = new Date().toISOString().substring(0, 7)
       const bajasMes = terneros?.filter(t => t.fecha_baja?.startsWith(mesActual)) || []
       const ingresosMes = terneros?.filter(t => t.fecha_nacimiento?.startsWith(mesActual)) || []
 
-      // Corrales con más problemas
       const corralesMap = {}
       activos.forEach(t => {
         if (!corralesMap[t.corral]) corralesMap[t.corral] = { corral: t.corral, critico: 0, alerta: 0, total: 0 }
@@ -111,11 +108,11 @@ MOVIMIENTO DEL MES:
 
 Generá el resumen en 3-5 párrafos cortos. No uses bullets. No inventes datos que no te di.`
 
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
+      const response = await fetch('/api/resumen-ia', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-opus-4-6',
           max_tokens: 1000,
           messages: [{ role: 'user', content: prompt }]
         })
@@ -159,7 +156,6 @@ Generá el resumen en 3-5 párrafos cortos. No uses bullets. No inventes datos q
         </div>
       </div>
 
-      {/* Resumen IA */}
       {(resumenIA || loadingIA) && (
         <div className="card" style={{ marginBottom: 16, borderLeft: '4px solid #8b5cf6', background: '#faf9ff' }}>
           <div className="card-header">
@@ -183,7 +179,6 @@ Generá el resumen en 3-5 párrafos cortos. No uses bullets. No inventes datos q
         </div>
       )}
 
-      {/* Stats */}
       <div className="stats-grid stats-6">
         <div className="stat-card"><div className="stat-lbl">🐄 Total activos</div><div className="stat-val">{stats.total}</div><div className="stat-sub">en guachera</div></div>
         <div className="stat-card v"><div className="stat-lbl">✓ Sanos</div><div className="stat-val">{stats.sanos}</div><div className="stat-sub">sin novedades</div></div>
