@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../supabase'
 import { Link } from 'react-router-dom'
 
+const GEMINI_KEY = 'AIzaSyDI2X13p8NI-Jz1UqK0jeMt-Fdv61idcQA'
+
 export default function Dashboard() {
   const [stats, setStats] = useState({ total: 0, sanos: 0, alerta: 0, critico: 0, enTrat: 0, recria: 0 })
   const [corrales, setCorrales] = useState([])
@@ -108,14 +110,21 @@ MOVIMIENTO DEL MES:
 
 Generá el resumen en 3-5 párrafos cortos. No uses bullets. No inventes datos que no te di.`
 
-      const response = await fetch('/api/resumen-ia', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt })
-      })
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { maxOutputTokens: 1024, temperature: 0.7 },
+          }),
+        }
+      )
 
       const data = await response.json()
-      setResumenIA(data.texto || 'No se pudo generar el resumen.')
+      const texto = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No se pudo generar el resumen.'
+      setResumenIA(texto)
     } catch (e) {
       setResumenIA('Error al generar el resumen. Intentá de nuevo.')
     }
