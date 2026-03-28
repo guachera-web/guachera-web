@@ -9,16 +9,19 @@ export default function Tratamientos() {
 
   useEffect(() => { cargar() }, [])
 
+  // Soporta YYYY-MM-DD y DD/MM/YYYY
   function parseFecha(str) {
     if (!str) return null
-    const [d, m, y] = str.split('/')
-    if (!d || !m || !y) return null
-    return new Date(`${y}-${m}-${d}`)
-  }
-
-  function fmtFecha(str) {
-    if (!str) return '—'
-    return str
+    if (str.includes('-')) {
+      const d = new Date(str)
+      return isNaN(d) ? null : d
+    }
+    if (str.includes('/')) {
+      const [d, m, y] = str.split('/')
+      if (!d || !m || !y) return null
+      return new Date(`${y}-${m}-${d}`)
+    }
+    return null
   }
 
   async function cargar() {
@@ -84,6 +87,12 @@ export default function Tratamientos() {
     const total = (fin - inicio) / 86400000
     const transcurrido = (hoy - inicio) / 86400000
     return Math.min(100, Math.max(0, Math.round((transcurrido / total) * 100)))
+  }
+
+  function fmtFecha(str) {
+    const d = parseFecha(str)
+    if (!d) return '—'
+    return d.toLocaleDateString('es-AR')
   }
 
   if (loading) return <div className="loading">Cargando...</div>
