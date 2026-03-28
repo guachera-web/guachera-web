@@ -4,8 +4,9 @@ import { supabase } from '../supabase'
 export default function Tratamientos() {
   const [tratamientos, setTratamientos] = useState([])
   const [historico, setHistorico] = useState([])
-  const [todosIds, setTodosIds] = useState({}) // ternero_id -> cantidad de tratamientos últimos 30d
+  const [todosIds, setTodosIds] = useState({})
   const [tab, setTab] = useState('activos')
+  const [busqueda, setBusqueda] = useState('')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => { cargar() }, [])
@@ -63,7 +64,6 @@ export default function Tratamientos() {
       hace30.setDate(hace30.getDate() - 30)
       hace30.setHours(0, 0, 0, 0)
 
-      // Contar cuántos tratamientos tuvo cada ternero en los últimos 30 días
       const conteo = {}
       data.forEach(t => {
         const inicio = parseFecha(t.fecha_inicio)
@@ -116,9 +116,9 @@ export default function Tratamientos() {
 
   if (loading) return <div className="loading">Cargando...</div>
 
-  const lista = tab === 'activos' ? tratamientos : historico
+  const lista = (tab === 'activos' ? tratamientos : historico)
+    .filter(t => !busqueda || t.terneros?.caravana?.toLowerCase().includes(busqueda.toLowerCase()))
 
-  // Conteo de alertas para mostrar en el header
   const repiten = tratamientos.filter(t => (todosIds[t.ternero_id] || 0) > 1).length
   const largos = tratamientos.filter(t => diasEnTratamiento(t.fecha_inicio) > 7).length
 
@@ -129,35 +129,32 @@ export default function Tratamientos() {
           <h2>Tratamientos</h2>
           <p>{tratamientos.length} activo{tratamientos.length !== 1 ? 's' : ''}</p>
         </div>
+        <div className="topbar-right">
+          <input
+            className="search-bar"
+            placeholder="🔍 Buscar por caravana..."
+            value={busqueda}
+            onChange={e => setBusqueda(e.target.value)}
+          />
+        </div>
       </div>
 
-      {/* Alertas de atención */}
       {(repiten > 0 || largos > 0) && (
         <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
           {repiten > 0 && (
-            <div style={{
-              background: '#fff8f0', border: '1px solid var(--naranja)',
-              borderRadius: 10, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 8
-            }}>
+            <div style={{ background: '#fff8f0', border: '1px solid var(--naranja)', borderRadius: 10, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ fontSize: 18 }}>🔁</span>
               <div>
-                <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--naranja)' }}>
-                  {repiten} animal{repiten !== 1 ? 'es' : ''} con tratamiento repetido
-                </div>
+                <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--naranja)' }}>{repiten} animal{repiten !== 1 ? 'es' : ''} con tratamiento repetido</div>
                 <div style={{ fontSize: 12, color: 'var(--muted)' }}>Recibieron más de un tratamiento en los últimos 30 días</div>
               </div>
             </div>
           )}
           {largos > 0 && (
-            <div style={{
-              background: '#fff0f0', border: '1px solid var(--rojo)',
-              borderRadius: 10, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 8
-            }}>
+            <div style={{ background: '#fff0f0', border: '1px solid var(--rojo)', borderRadius: 10, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ fontSize: 18 }}>⏰</span>
               <div>
-                <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--rojo)' }}>
-                  {largos} animal{largos !== 1 ? 'es' : ''} con tratamiento prolongado
-                </div>
+                <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--rojo)' }}>{largos} animal{largos !== 1 ? 'es' : ''} con tratamiento prolongado</div>
                 <div style={{ fontSize: 12, color: 'var(--muted)' }}>Llevan más de 7 días en tratamiento</div>
               </div>
             </div>
@@ -178,7 +175,7 @@ export default function Tratamientos() {
         {lista.length === 0 ? (
           <div className="empty">
             <div className="empty-icon">💊</div>
-            {tab === 'activos' ? 'Sin tratamientos activos' : 'Sin tratamientos en los últimos 30 días'}
+            {busqueda ? `Sin resultados para "${busqueda}"` : tab === 'activos' ? 'Sin tratamientos activos' : 'Sin tratamientos en los últimos 30 días'}
           </div>
         ) : (
           <table className="tabla">
@@ -229,7 +226,7 @@ export default function Tratamientos() {
                       <td><span className="chip g">Finalizado</span></td>
                     )}
                     <td>
-                      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                      <div style={{ display: 'flex', gap: 4 }}>
                         {repite && <span title="Tratamiento repetido en 30 días" style={{ fontSize: 16, cursor: 'default' }}>🔁</span>}
                         {largo && <span title={`${diasEnTratamiento(t.fecha_inicio)} días en tratamiento`} style={{ fontSize: 16, cursor: 'default' }}>⏰</span>}
                         {!repite && !largo && <span style={{ color: 'var(--muted)', fontSize: 12 }}>—</span>}
