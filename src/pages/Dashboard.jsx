@@ -112,7 +112,7 @@ Generá el resumen en 3-5 párrafos cortos. No uses bullets. No inventes datos q
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-opus-4-6',
+          model: 'claude-sonnet-4-20250514',
           max_tokens: 1000,
           messages: [{ role: 'user', content: prompt }]
         })
