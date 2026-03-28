@@ -111,16 +111,11 @@ Generá el resumen en 3-5 párrafos cortos. No uses bullets. No inventes datos q
       const response = await fetch('/api/resumen-ia', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 1000,
-          messages: [{ role: 'user', content: prompt }]
-        })
+        body: JSON.stringify({ prompt })
       })
 
       const data = await response.json()
-      const texto = data.content?.find(b => b.type === 'text')?.text || 'No se pudo generar el resumen.'
-      setResumenIA(texto)
+      setResumenIA(data.texto || 'No se pudo generar el resumen.')
     } catch (e) {
       setResumenIA('Error al generar el resumen. Intentá de nuevo.')
     }
