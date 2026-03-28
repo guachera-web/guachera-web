@@ -32,24 +32,23 @@ export default function Tratamientos() {
   async function cargar() {
     setLoading(true)
 
-    // Query simple sin join anidado
-    const { data: trats } = await supabase
-      .from('tratamientos')
-      .select('*, terneros(caravana, corral)')
-      .eq('establecimiento', 'tambo_1')
-      .order('fecha_fin')
-
-    // Query separada para detalles y medicamentos
-    const { data: detalles } = await supabase
-      .from('tratamiento_detalle')
-      .select('*, medicamentos(nombre)')
-      .eq('establecimiento', 'tambo_1')
+    const [{ data: trats }, { data: detalles }, { data: meds }] = await Promise.all([
+      supabase.from('tratamientos').select('*, terneros(caravana, corral)').eq('establecimiento', 'tambo_1').order('fecha_fin'),
+      supabase.from('tratamiento_detalle').select('*').eq('establecimiento', 'tambo_1'),
+      supabase.from('medicamentos').select('*').eq('establecimiento', 'tambo_1'),
+    ])
 
     if (trats) {
-      // Combinar manualmente
+      // Mapa de medicamentos por id
+      const medsMap = {}
+      meds?.forEach(m => { medsMap[m.id] = m })
+
+      // Combinar
       const data = trats.map(t => ({
         ...t,
-        tratamiento_detalle: detalles?.filter(d => d.tratamiento_id === t.id) || []
+        tratamiento_detalle: (detalles || [])
+          .filter(d => d.tratamiento_id === t.id)
+          .map(d => ({ ...d, medicamento: medsMap[d.medicamento_id] || null }))
       }))
 
       const hoy = new Date()
@@ -59,18 +58,15 @@ export default function Tratamientos() {
       hace30.setDate(hace30.getDate() - 30)
       hace30.setHours(0, 0, 0, 0)
 
-      const activos = data.filter(t => {
+      setTratamientos(data.filter(t => {
         const fin = parseFecha(t.fecha_fin)
         return fin && fin >= hoy
-      })
+      }))
 
-      const hist = data.filter(t => {
+      setHistorico(data.filter(t => {
         const fin = parseFecha(t.fecha_fin)
         return fin && fin < hoy && fin >= hace30
-      }).reverse()
-
-      setTratamientos(activos)
-      setHistorico(hist)
+      }).reverse())
     }
     setLoading(false)
   }
@@ -87,9 +83,9 @@ export default function Tratamientos() {
     const det = t.tratamiento_detalle
     if (!det || det.length === 0) return '—'
     return det.map(d => {
-      const nombre = d.medicamentos?.nombre || '—'
+      const nombre = d.medicamento?.nombre || '—'
       const dosis = d.dosis ? `${d.dosis} ${d.unidad || ''}`.trim() : ''
-      return dosis ? `${nombre} ${dosis}` : nombre
+      return dosis ? `${nombre} · ${dosis}` : nombre
     }).join(', ')
   }
 
