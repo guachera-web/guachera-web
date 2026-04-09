@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
 
 export default function Animales() {
@@ -6,6 +7,7 @@ export default function Animales() {
   const [filtro, setFiltro] = useState('todos')
   const [busqueda, setBusqueda] = useState('')
   const [loading, setLoading] = useState(true)
+  const navigate = useNavigate()
 
   useEffect(() => { cargar() }, [])
 
@@ -77,17 +79,18 @@ export default function Animales() {
           <table className="tabla">
             <thead>
               <tr>
-                <th>Caravana</th><th>Corral</th><th>Días de vida</th><th>Estado</th><th>Fecha nacimiento</th>
+                <th>Caravana</th><th>Corral</th><th>Días de vida</th><th>Estado</th><th>Fecha nacimiento</th><th></th>
               </tr>
             </thead>
             <tbody>
               {filtrados.map(a => (
-                <tr key={a.id}>
+                <tr key={a.id} style={{ cursor: 'pointer' }} onClick={() => navigate(`/animales/${a.id}`)}>
                   <td><strong>{a.caravana}</strong></td>
                   <td>Corral {a.corral}</td>
                   <td>{diasDeVida(a.fecha_nacimiento)}</td>
                   <td><span className={`chip ${chipClass(a.estado)}`}>{a.estado}</span></td>
                   <td>{a.fecha_nacimiento?.substring(0, 10) || '—'}</td>
+                  <td style={{ color: 'var(--muted)', fontSize: 13 }}>Ver →</td>
                 </tr>
               ))}
             </tbody>

@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, NavLink, Navigate } from 'react-router-do
 import Dashboard from './pages/Dashboard'
 import Corrales from './pages/Corrales'
 import Animales from './pages/Animales'
+import Animal from './pages/Animal'
 import Alertas from './pages/Alertas'
 import Tratamientos from './pages/Tratamientos'
 import Recria from './pages/Recria'
@@ -33,7 +34,7 @@ export default function App() {
             <p>Panel veterinario</p>
           </div>
           <nav className="sidebar-nav">
-            {nav.map((item, i) => (
+            {nav.map((item) => (
               <div key={item.to}>
                 {item.section && <div className="nav-label">{item.section}</div>}
                 <NavLink
@@ -62,6 +63,7 @@ export default function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/corrales" element={<Corrales />} />
             <Route path="/animales" element={<Animales />} />
+            <Route path="/animales/:id" element={<Animal />} />
             <Route path="/alertas" element={<Alertas />} />
             <Route path="/tratamientos" element={<Tratamientos />} />
             <Route path="/recria" element={<Recria />} />
