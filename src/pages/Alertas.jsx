@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
 
 export default function Alertas() {
@@ -7,6 +8,7 @@ export default function Alertas() {
   const [tratVencen, setTratVencen] = useState([])
   const [loading, setLoading] = useState(true)
   const hoy = new Date().toISOString().split('T')[0]
+  const navigate = useNavigate()
 
   useEffect(() => { cargar() }, [])
 
@@ -40,6 +42,11 @@ export default function Alertas() {
         <div className="topbar-left">
           <h2>Alertas del día</h2>
           <p>{criticos.length + alertas.length} animales requieren atención</p>
+        </div>
+        <div className="topbar-right">
+          <button className="btn btn-primary" onClick={() => navigate('/imprimir')}>
+            🖨️ Imprimir lista
+          </button>
         </div>
       </div>
 

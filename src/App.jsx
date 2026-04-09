@@ -9,6 +9,7 @@ import Recria from './pages/Recria'
 import Balance from './pages/Balance'
 import Reportes from './pages/Reportes'
 import Usuarios from './pages/Usuarios'
+import Imprimir from './pages/Imprimir'
 import './App.css'
 
 const nav = [
@@ -70,6 +71,7 @@ export default function App() {
             <Route path="/balance" element={<Balance />} />
             <Route path="/reportes" element={<Reportes />} />
             <Route path="/usuarios" element={<Usuarios />} />
+            <Route path="/imprimir" element={<Imprimir />} />
           </Routes>
         </main>
       </div>
