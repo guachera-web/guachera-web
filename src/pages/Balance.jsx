@@ -50,7 +50,7 @@ export default function Balance() {
     doc.setFontSize(11)
     doc.setFont('helvetica', 'normal')
     doc.text(`Balance mensual — ${mesLabel}`, 14, 20)
-    doc.text('Tambo Saifica', 160, 20)
+    doc.text('Demo', 160, 20)
 
     // KPIs
     doc.setTextColor(26, 26, 26)
