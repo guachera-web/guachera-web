@@ -54,7 +54,7 @@ export default function App() {
             <div className="tambo-badge">
               <div className="tambo-avatar">T</div>
               <div className="tambo-info">
-                <p>Tambo Saifica</p>
+                <p>Demo</p>
                 <span><span className="sync-dot"></span> En línea</span>
               </div>
             </div>
