@@ -11,6 +11,7 @@ import Reportes from './pages/Reportes'
 import Usuarios from './pages/Usuarios'
 import Imprimir from './pages/Imprimir'
 import Estadisticas from './pages/Estadisticas'
+import Calendario from './pages/Calendario'
 import './App.css'
 
 const nav = [
@@ -23,6 +24,7 @@ const nav = [
   { to: '/balance', label: 'Balance', icon: '⚖️', section: 'Gestión' },
   { to: '/reportes', label: 'Reportes', icon: '📈' },
   { to: '/estadisticas', label: 'Estadísticas', icon: '📉' },
+  { to: '/calendario', label: 'Calendario', icon: '📅', section: 'Planificación' },
   { to: '/usuarios', label: 'Usuarios', icon: '👥', section: 'Administración' },
 ]
 
@@ -73,6 +75,7 @@ export default function App() {
             <Route path="/balance" element={<Balance />} />
             <Route path="/reportes" element={<Reportes />} />
             <Route path="/estadisticas" element={<Estadisticas />} />
+            <Route path="/calendario" element={<Calendario />} />
             <Route path="/usuarios" element={<Usuarios />} />
             <Route path="/imprimir" element={<Imprimir />} />
           </Routes>
